@@ -61,6 +61,13 @@ public class YugongExampleOracleDataTranslator extends AbstractDataTranslator im
         // record.setSchemaName("test");
         record.setTableName("yugong_example_mysql");
 
+        // 4. 字段类型不同
+       /* ColumnValue id = record.getColumnByName("id");
+        if (id != null) {
+            id.getColumn().setType(Types.VARCHAR);
+            id.setValue(ObjectUtils.toString(id.getValue()));
+        }*/
+
         // 2. 字段名字不同
         ColumnValue nameColumn = record.getColumnByName("name");
         if (nameColumn != null) {

@@ -2,6 +2,8 @@ package com.taobao.yugong.controller;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -14,10 +16,13 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
+import com.taobao.yugong.common.utils.DataSourceHelper;
+import com.taobao.yugong.common.utils.HintManagerHelper;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.shardingsphere.api.hint.HintManager;
 import org.slf4j.MDC;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -109,7 +114,13 @@ public class YuGongController extends AbstractYuGongLifeCycle {
         this.sourceDbType = DbType.valueOf(StringUtils.upperCase(config.getString("yugong.database.source.type")));
         this.targetDbType = DbType.valueOf(StringUtils.upperCase(config.getString("yugong.database.target.type")));
         this.translatorDir = new File(config.getString("yugong.translator.dir", "../conf/translator"));
-        this.globalContext = initGlobalContext();
+
+        try {
+            this.globalContext = initGlobalContext();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+
         this.alarmService = initAlarmService();
 
         boolean extractorDump = config.getBoolean("yugong.extractor.dump", true);
@@ -437,7 +448,7 @@ public class YuGongController extends AbstractYuGongLifeCycle {
         return result;
     }
 
-    private YuGongContext initGlobalContext() {
+    private YuGongContext initGlobalContext() throws Exception {
         YuGongContext context = new YuGongContext();
         logger.info("check source database connection ...");
         context.setSourceDs(initDataSource("source"));
@@ -448,7 +459,11 @@ public class YuGongController extends AbstractYuGongLifeCycle {
         // }
 
         logger.info("check target database connection ...");
-        context.setTargetDs(initDataSource("target"));
+        //context.setTargetDs(initDataSource("target"));
+        //HintManager hintManager = HintManager.getInstance();
+        //HintManagerHelper.initializeHintManagerForShardingDatabases(hintManager);
+        DataSource dataSourceForShardingDatabases = DataSourceHelper.getDataSourceForShardingDatabases();
+        context.setTargetDs(dataSourceForShardingDatabases);
         logger.info("check target database is ok");
         context.setSourceEncoding(config.getString("yugong.database.source.encode", "UTF-8"));
         context.setTargetEncoding(config.getString("yugong.database.target.encode", "UTF-8"));
